@@ -1,5 +1,6 @@
 #  coding: utf-8
 import socketserver
+import os
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 #
@@ -29,25 +30,63 @@ import socketserver
 
 class MyWebServer(socketserver.BaseRequestHandler):
 
-    def get_return_code(self, data_type):
+    def check_if_file_exsists(self, path, dict_of_files):
+        for file in dict_of_files.values():
+            for item in file:
+                if path == item:
+                    f = open("./www"+item, "r")
+                    return f.read()
+        for file in dict_of_files.values():
+            for item in file:
+                if path+"index.html" == item:
+                    f = open("./www"+item, "r")
+                    return f.read()
+        return False
+
+    def get_all_files(self):
+        dict_of_files = {}
+        dict_of_files['./www/'] = []
+        for filename1 in os.listdir('./www/'):
+            if filename1.endswith(".css") or filename1.endswith(".html"):
+                dict_of_files['./www/'].append(os.path.join('/', filename1))
+            else:
+                for filename2 in os.listdir('./www/'+filename1+"/"):
+                    if filename2.endswith(".css") or filename2.endswith(".html"):
+                        try:
+                            dict_of_files['./www/'+filename1+"/"].append(os.path.join('/'+filename1+'/', filename2))
+                        except:
+                            dict_of_files['./www/'+filename1+"/"] = [os.path.join('/'+filename1+'/', filename2)]
+                    else:
+                        pass
+        return dict_of_files
+
+    def get_return_string(self, data_type, path, dict_of_files):
         if data_type == 'GET':
-            resp = "HTTP/1.1 200 OK \r\n\r\n HELLO WORLD"
-            return resp
+            file_exsist = self.check_if_file_exsists(path, dict_of_files)
+            if not file_exsist:
+                    resp = "HTTP/1.1 404 Not Found\r\n\r\n"
+                    return resp
+            else:
+                if path.endswith('.css'):
+                    resp = "HTTP/1.1 200 OK \r\nContent-Type: text/css;\r\n\r\n"+file_exsist
+                    return resp
+                else:
+                    resp = "HTTP/1.1 200 OK\r\nContent-Type: text/html;\r\n\r\n"+file_exsist
+                    return resp
         else:
-            resp = "HTTP/1.1 405 Method Not Allowed \r\n\r\n"
+            resp = "HTTP/1.1 405 Method Not Allowed\r\n\r\n"
             return resp
 
     def handle(self):
+        self.all_files = self.get_all_files()
         self.data = self.request.recv(1024).strip()
 
-        # get requests type
         data_split = self.data.split()
+        # get requests type
         self.data_type = data_split[0].decode('utf-8')
-        self.resp = self.get_return_code(self.data_type)
-
-        # get path
-        data_split = self.data.split('\n'.encode('utf-8'))
-        #print("data", data_split)
+        #get path
+        self.path = data_split[1].decode('utf-8')
+        self.resp = self.get_return_string(self.data_type, self.path, self.all_files)
 
 
 
