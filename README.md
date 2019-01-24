@@ -29,3 +29,7 @@ Contributors on Mandy's Assignment:
 * Braedy Kuzma
 * Michael Paradis
 * Bennett Hreherch
+
+Wild git magic:
+===============
+I have a deeper file (than the deep files) inside /hardcode. I have no idea how it got there. I must have pulled from Abram once and then it stuck? I have no idea, mystery. 
